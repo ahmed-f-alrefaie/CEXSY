@@ -1,0 +1,22 @@
+#pragma once
+#include "Broadeners.h"
+#include <string>
+#include <map>
+class ExomolBroadeners : public Broadeners{
+
+private:
+	void InitializeBroadener(std::string filename);
+	
+	
+protected:
+
+	ExomolBroadeners(std::string filename,double default_gam,double default_n,double mixture,int maxJ);
+	
+public:
+	//TODO: switch to more generic quanta
+	double GetGamma(int Ji,double temperature,double pressure);
+	
+
+};
+
+

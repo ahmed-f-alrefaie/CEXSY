@@ -1,0 +1,42 @@
+#pragma once
+
+#include <cmath>
+#include <vector>
+#include <iostream>
+#include <map>
+#include "profiles.h"
+
+
+class VoigtKampff{
+
+public:
+
+
+
+	VoigtKampff(std::vector<double> pGammaL,double pGammaD,double pRes,double pLorenzCutoff);
+	
+
+	//void Initialize()
+
+	double ComputeVoigt(double dfreq,double gammaL);
+	double ComputeDoppler(double dfreq,double gammaD, double nu);
+	double ComputeVoigt(double dfreq,int gammaL,double nu);
+	double HumlicekTest(double dfreq,double gammaL,double nu);
+
+private:
+
+	
+	int m_Npoints;
+	double m_res;
+	double i_mres;
+	double m_lorentz_cutoff;
+	double m_gammaD;
+	std::vector< std::vector<double> > m_voigt_grid;
+	std::map<double,int> m_gamma_mapping;
+	std::vector<double> m_gammaL;
+	std::vector<double> m_IgammaL;
+};
+
+
+
+

@@ -1,0 +1,272 @@
+#include "BaseProfile.h"
+
+BaseProfile::BaseProfile(Input* pInput): input(pInput), Ntrans(0),total_intens(0.0) {
+
+
+
+	start_nu = input->GetNuStart();
+	end_nu = input->GetNuEnd();
+	Npoints = input->GetNpoints();
+	dfreq = (end_nu-start_nu)/double(Npoints);
+	printf("Start_nu = %12.6f End_nu = %12.6f Dfreq = %12.6f Npoints =%d\n",start_nu,end_nu,dfreq,Npoints);
+
+	freq = new double[Npoints];
+	BaseManager::TrackGlobalMemory(sizeof(double)*Npoints);
+	intens= new double[Npoints];
+	BaseManager::TrackGlobalMemory(sizeof(double)*Npoints);
+	
+	for(int i = 0; i < Npoints; i++)
+	{
+		freq[i]=start_nu+double(i)*dfreq;
+		intens[i]=0.0;
+	}
+
+	TP_grid = pInput->GetTemperaturePressureGrid();
+	
+	
+	lorentz_cutoff = pInput->GetLorentzCutoff();
+	
+	//GetTemperaturePressureGrid(){return temp_press_grid;}
+	//vector<double> GetTemperatures(){return temperatures;}
+
+
+}
+
+BaseProfile::~BaseProfile(){
+
+	delete[] freq;
+	delete[] intens;
+
+	
+
+
+}
+
+
+void BaseProfile::SetupBroadening(){
+	int maxJ = state_reader->GetMaxJ();
+	
+	for(int i = 0; i < broadener_files.size(); i++){
+		broadeners.push_back(new ExomolBroadeners(input->GetGamma(),input->GetGammaN(),broadener_files[i].mixture,maxJ));
+		broadeners.back()->InitializeBroadener(broadener_files[i].filename);
+	
+	}
+	
+	double default_gamma = input->GetGamma();
+	double default_n = input->GetGammaN();
+	
+	for(int tp = 0; tp < TP_grid.size(); tp++){
+	
+		gamma_grid.push_back(vector<double>());
+		for(int i = 0; i <= maxJ; i++){
+			gamma_grid.back().push_back(default_gamma*pow(296.0/TP_grid[tp].temperature,default_n)*(TP_grid[tp].pressure/1.0)/BAR_TO_ATM);
+			for(int j = 0; j < broadeners.size(); j++){
+				if(j==0)
+					gamma_grid.back().back()= broadeners[j]->GetGamma(i,TP_grid[tp].temperature,TP_grid[tp].pressure);
+				else
+					gamma_grid.back().back()+= broadeners[j]->GetGamma(i,TP_grid[tp].temperature,TP_grid[tp].pressure);
+			
+			}
+			printf("J: %i GammaL: %12.6E\n",i,gamma_grid.back().back());
+		
+		
+		
+		}
+	
+	
+	
+	}
+	
+	
+
+}
+
+void BaseProfile::Initialize(){
+
+	//Get our transition files
+	transition_files = input->GetTransFiles();
+	//Get Our Brodeners
+	broadener_files = input->GetBroadeners();
+
+	//Initialize the stateReader TODO: Use Factory Design Pattern for this
+	if(input->GetFileType()==HITRAN_TYPE){
+		printf("HITRAN not yet implemented by GEXS\n");
+		exit(0);
+	//ExomolStateReader(std::string pFilename,std::vector<TemperaturePressure> grid)
+	}else if(input->GetFileType()==EXOMOL_TYPE){
+		state_reader = (StateReader*)(new ExomolStateReader( input->GetStateFile() , TP_grid));
+	//	exit(0);
+	}else{
+		printf("FILETYPE not recognized\n");
+		exit(0);
+	}
+
+
+	
+	SetupBroadening();
+	
+	worker=new ThreadWorker(TP_grid,state_reader->GetPartitions(),input->GetNumThreads());
+	
+	worker->InitializeConstants(dfreq,lorentz_cutoff);
+	worker->InitializeLorentzian(gamma_grid);	
+	worker->InitializeDoppler(input->GetMeanMass());
+	
+
+	worker->InitializeVectors(Npoints);
+
+	worker->TransferFreq(freq,intens,Npoints);
+	num_trans_fit=worker->GetNtrans();
+
+
+	m_beta = SEC_RAD/TP_grid[0].temperature;
+
+	h_energies = new double[num_trans_fit];
+	h_nu = new double[num_trans_fit];
+	h_aif = new double[num_trans_fit];
+	h_gns = new int[num_trans_fit];
+	h_Ji = new int[num_trans_fit];
+
+	BaseManager::TrackGlobalMemory(3l*sizeof(double)*num_trans_fit + 2l*sizeof(int)*num_trans_fit);
+
+	//InitializeProfile();	
+	//Get our transition files
+
+	
+
+}
+
+
+void BaseProfile::ExecuteCrossSection(){
+	//We have no transitions right now	
+	Ntrans = 0;
+	double t_nu,t_ei,t_aif;
+	int t_gns,t_Ji;
+	int num_trans_files = transition_files.size();
+	max_nu = 0.0;
+	min_nu = 99999.0;
+
+	for(int  i = 0; i < num_trans_files; i++){
+		state_reader->OpenFile(transition_files[i]);
+		printf("%s\n",transition_files[i].c_str());
+		fflush(0);
+		Timer::getInstance().StartTimer("FileIO");
+		printf("Range = %12.6f - %12.6f \n",start_nu-lorentz_cutoff,end_nu+lorentz_cutoff);
+		while(state_reader->ReadNextState(t_nu,t_gns,t_ei,t_aif,t_Ji)){
+
+			if(t_nu< start_nu-lorentz_cutoff)
+				continue;
+			if(t_nu> end_nu+lorentz_cutoff)
+				break;
+			if(t_nu ==0.0)
+				continue;
+				
+			
+			h_energies[Ntrans] = t_ei;
+			h_nu[Ntrans] = t_nu;
+			h_gns[Ntrans] = t_gns;
+			h_aif[Ntrans] = t_aif;
+			h_Ji[Ntrans] = t_Ji;		
+			
+			//if(
+			Ntrans++;
+			//this ensures the minimum work required is performed
+			if(Ntrans>=num_trans_fit)
+			{
+				
+				PerformCrossSection();
+				Ntrans = 0;
+			}
+		}
+		Timer::getInstance().EndTimer("FileIO");
+		state_reader->CloseFile();
+
+	}
+	printf("Left over transitions: %zu\n",Ntrans);
+	if(Ntrans > 0 ){
+
+		//gammaHW = 500.0*max_gammaL*pow((300.0/input->GetTemperature()),min_n)*input->GetPressure(); 
+		PerformCrossSection();
+
+				//Reset counters		
+	}
+
+
+
+}
+
+void BaseProfile::ComputeTotalIntensity(){
+		//Only deal with the first temperature
+		double temp = TP_grid[0].temperature;
+		double partition = state_reader->GetPartitions()[0];
+		double temp_intens = 0.0;
+		m_beta = PLANCK*VELLGT/(BOLTZ*temp);
+		//#pragma omp parallel for reduction(+:temp_intens)
+		for(int i = 0; i < Ntrans; i++){
+			if(h_nu[i]==0) continue;
+			double abscoef= CMCOEF*h_aif[i]*h_gns[i]
+				*exp(-m_beta*h_energies[i])*(1.0-exp(-m_beta*h_nu[i]))/
+				(h_nu[i]*h_nu[i]*partition);
+			temp_intens+=abscoef;
+		}
+
+	total_intens+=temp_intens;
+        
+
+}
+
+void BaseProfile::PerformCrossSection(){
+		ComputeTotalIntensity();
+		printf("Waiting for previous calculation to finish......\n");
+		
+		fflush(0);
+		
+		Timer::getInstance().StartTimer("Execute Cross-Section");	
+		
+		while(!worker->ReadyForWork()){};
+		worker->TransferVectors(Ntrans,h_energies, h_nu, h_aif,h_gns,h_Ji);
+		worker->ExecuteCrossSection(Ntrans);
+		
+		
+		Timer::getInstance().EndTimer("Execute Cross-Section");		
+		
+		
+}
+
+void BaseProfile::OutputProfile(){
+	//Output Data
+	/*if(num_intens==1){
+		manager->TransferResults(freq,intens,Npoints);
+		for(int j = 0; j < Npoints; j++)
+			printf("##0 %12.6f %13.8E\n",freq[j],intens[j]);
+	}else{
+	*/
+	Timer::getInstance().StartTimer("Collecting Results");
+	for(int i = 0; i < TP_grid.size(); i++){
+		Timer::getInstance().StartTimer("Move from Worker");
+		for(int j = 0; j < Npoints; j++)
+			intens[j] = 0.0;
+		worker->TransferResults(freq,intens,Npoints,i);
+		Timer::getInstance().EndTimer("Move from Worker");
+		Timer::getInstance().StartTimer("Compare Intensity");		
+		if (i ==0){
+			double cross_intens = 0.0;
+			for(int l =0; l < Npoints; l++){
+				cross_intens+= intens[l];
+			}
+			cross_intens*=dfreq;
+			printf("Our summed intensity = %16.6E compared to the integrated intensity = %16.6E with a difference of %12.6f % \n",total_intens,cross_intens,(total_intens-cross_intens)*100.0/total_intens);
+		}
+		Timer::getInstance().EndTimer("Compare Intensity");
+		Timer::getInstance().StartTimer("Printing");
+		printf("-------T=%12.6f K--------P=%12.6f atm---------\n\n",TP_grid[i].temperature,TP_grid[i].pressure);
+		for(int j = 0; j < Npoints; j++)
+			printf("[%i] %12.6f %13.8E\n",i,freq[j],intens[j]);
+		printf("\n");
+		Timer::getInstance().EndTimer("Printing");
+		
+	}
+	Timer::getInstance().EndTimer("Collecting Results");
+	//}
+
+
+}
