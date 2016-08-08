@@ -7,6 +7,7 @@
 	
 ExomolBroadeners::ExomolBroadeners(double default_gam,double default_n,double mixture, int maxJ) : Broadeners(default_gam,default_n,296.0,1.0,mixture,maxJ){
 
+	printf("Starting broadeners...maxJ=%d\n",m_maxJ);
 	//Initialize the vector
 	for(int i = 0; i <= maxJ; i++){
 		gamma.push_back(broadinfo());
@@ -44,10 +45,10 @@ void ExomolBroadeners::InitializeBroadener(std::string filename){
 		if(trim(split_line[0])!="a0")
 			continue;
 			
-			
-		gamma[Ji].gamma = gam;
-		gamma[Ji].n = n;
-
+		if (Ji <= m_maxJ) {
+			gamma[Ji].gamma = gam;
+			gamma[Ji].n = n;
+		}
 	}		
 	
 	
@@ -56,9 +57,12 @@ void ExomolBroadeners::InitializeBroadener(std::string filename){
 
 
 double ExomolBroadeners::GetGamma(int Ji,double temperature,double pressure){
-	
-	return gamma[Ji].gamma*m_mixture*pow(m_ref_temp/temperature,gamma[Ji].n)*(pressure/m_ref_press)/BAR_TO_ATM;
-	
+	if (Ji <= m_maxJ) {
+		return gamma[Ji].gamma*m_mixture*pow(m_ref_temp / temperature, gamma[Ji].n)*(pressure / m_ref_press) / BAR_TO_ATM;
+	}
+	else {
+		return m_def_gam*m_mixture*pow(m_ref_temp / temperature, m_def_n)*(pressure / m_ref_press) / BAR_TO_ATM;
+	}
 
 }
 
