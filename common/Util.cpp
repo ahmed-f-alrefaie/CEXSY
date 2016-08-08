@@ -17,6 +17,7 @@
 #include <ctime>
 
 #ifdef __linux
+#include <sys/time.h>
 #include <unistd.h>
 #elif _WIN32
 #include <windows.h>
