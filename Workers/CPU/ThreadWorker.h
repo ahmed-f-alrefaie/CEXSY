@@ -1,5 +1,6 @@
 #include <cmath>
 #include <thread>
+#include <mutex>
 #include "../BaseWorker.h"
 #include <vector>
 #include "../../common/defines.h"
@@ -11,7 +12,7 @@
 class ThreadWorker : public BaseWorker{
 
 private:
-		bool* threads_done;
+		std::vector<bool> threads_done;
 		bool master_thread_done;
 		int working_threads;
 		int total_threads;

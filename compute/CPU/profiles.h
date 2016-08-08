@@ -1,5 +1,6 @@
-#include <math.h>
-#include <complex.h>
+#pragma once
+#include <cmath>
+#include <ccomplex>
 
 
-double humlic(double x, double y);
+extern inline double humlic(double x, double y);

@@ -1,6 +1,7 @@
-#include <cmath>
+#include <math.h>
 #include <vector>
 #include <iostream>
+#include <algorithm>
 #include "VoigtKampff.h"
 #include <cstdlib>
 #include <cstdio>
@@ -109,10 +110,19 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 	
 	int center_point = (nu-start_nu)/m_res;
 	int middle_shift = center_point - middle_point;
+	double gammaL_ = m_gammaL[gammaL];
+	
 	//int dist = DISTANCE_MAGIC_NUMBER/m_res;//(m_gammaD*nu/m_gammaL[gammaL])/m_res;
-	int dist = (m_gammaD*nu/m_gammaL[gammaL])/m_res;	
+	int dist;
+	if (gammaL == 0.0)
+		dist = m_Npoints;
+	else
+		dist = (m_gammaD*nu / m_gammaL[gammaL]) / m_res;
 	int ib_rel = ib - middle_shift;
 	int ie_rel = ie - middle_shift;
+	
+	double gammaD_ = (m_gammaD*nu);
+
 	
 	
 	//int ib_rel = (freq[ib] - nu)/m_res  + middle_point;
@@ -148,15 +158,27 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 	
 	
 	double dfreq;
-		
-	for(int i = start_dist; i < end_dist; i++){
-		//int index = i + ib - ib_rel;
-		//if(index < ib) continue;
-		//if(index >= ie) continue;
-		dfreq = freq[i]-nu;
-		intens[i] += HumlicekTest(dfreq,m_gammaL[gammaL],nu)*abscoef;
-	} 
 	
+	if (gammaL_ == 0.0) {
+		//USe vectorized doppler
+		ComputeDopplerVectorized(freq, intens, abscoef, ib, ie, gammaD_, nu);
+
+
+
+	}
+	else {
+
+		for (int i = start_dist; i < end_dist; i++) {
+			//int index = i + ib - ib_rel;
+			//if(index < ib) continue;
+			//if(index >= ie) continue;
+			dfreq = freq[i] - nu;
+			intens[i] += HumlicekTest(dfreq, gammaL_, nu)*abscoef;
+		}
+	}
+	
+
+
 	//int dist_hum = dist;
 	
 	//for(int i = dist+1; i < dist
@@ -171,6 +193,18 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 
 
 
+}
+
+void VoigtKampff::ComputeDopplerVectorized(const double * __restrict freq, double * __restrict intens, const double abscoef, const int ib, const int ie, const double gammaD, const double nu)
+{
+	double x0 = SQRTLN2 / (gammaD)*m_res*0.5;
+	for (int i = ib; i < ie; i++) {
+		//dfreq = freq[i] - nu;
+		//double xp = SQRTLN2 / gammaD_*(dfreq) + x0;
+		//double xm = SQRTLN2 / gammaD_*(dfreq)-x0;
+		//intens[i] += exp(i);
+		intens[i] += (erf(SQRTLN2 / gammaD*(freq[i] - nu) + x0) - erf(SQRTLN2 / gammaD*(freq[i] - nu) - x0))*abscoef*0.5 / (freq[i] - nu);
+	}
 }
 
 

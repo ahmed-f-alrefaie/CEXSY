@@ -1,5 +1,4 @@
-#include <cmath>
-#include <complex>
+#include "profiles.h"
 
 #define RT2LN2 1.1774100225154747     // sqrt(2ln2)
 #define RTPI 1.7724538509055159       // sqrt(pi)
@@ -8,7 +7,7 @@
 
 typedef std::complex<double> dcomp;
 
-double humlic(double x, double y)
+inline double humlic(double x, double y)
 {
     dcomp T(y,- x);
     double S = fabs(x) + y;
@@ -32,13 +31,15 @@ double humlic(double x, double y)
                 +T*(39.27121+T*(21.69274+T*(6.699398+T)))));
         //fprintf(stdout, "III");
         return humlic1.real();
-    }
-    // Region IV
-    dcomp U = T * T;
-    dcomp humlic1;
-    humlic1 = exp(U)-T*(36183.31-U*(3321.9905-U*(1540.787-U*(219.0313-U*
-       (35.76683-U*(1.320522-U*.56419))))))/(32066.6-U*(24322.84-U*
-       (9022.228-U*(2186.181-U*(364.2191-U*(61.57037-U*(1.841439-U)))))));
-    //fprintf(stdout, "IV");
-    return humlic1.real();
+	}
+	else {
+		// Region IV
+		dcomp U = T * T;
+		dcomp humlic1;
+		humlic1 = exp(U) - T*(36183.31 - U*(3321.9905 - U*(1540.787 - U*(219.0313 - U*
+			(35.76683 - U*(1.320522 - U*.56419)))))) / (32066.6 - U*(24322.84 - U*
+			(9022.228 - U*(2186.181 - U*(364.2191 - U*(61.57037 - U*(1.841439 - U)))))));
+		//fprintf(stdout, "IV");
+		return humlic1.real();
+	}
 }

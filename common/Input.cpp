@@ -103,8 +103,8 @@ void Input::ReadInputII(){
 
 	stringstream s_cin;
 	s_cin<<"HITRAN\nPARTITION -1.725235E+03\nN-POINTS 14001\nNU-RANGE 0.0 10000.0\nPROFILE VOIGT\nMEAN-MASS 17.031\nHITRAN-MIXTURE-AIR 1.0\nTEMPERATURE-PRESSURE-GRID\n296.0 0.0986923\nEND\nMAX-POINTS 14000001\nNUM-THREADS 0\nMEMORY 10\nTRANS-FILES\nNH3.par\nEND\n";
-	ifstream i_cin("BT2_test_100_nvvp.inp");
-	istream & input_stream = cin;
+	ifstream i_cin("H2O_0-250_500K.inp");
+	istream & input_stream = i_cin;
 
 	string line;
 	getline(input_stream,line);

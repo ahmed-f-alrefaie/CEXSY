@@ -3,6 +3,7 @@
 #include <sstream>
 #include <iostream>
 #include <map>
+#include <algorithm>
 using namespace std;
 
 
@@ -65,7 +66,7 @@ bool ExomolStateReader::ReadNextState(double & nu,int & gns,double & e_i, double
 
 	
 
-	if ( ((*stream)>>id_f>>id_i>>aif)==false)
+	if ( !((*stream)>>id_f>>id_i>>aif))
 		return false;
 
 	

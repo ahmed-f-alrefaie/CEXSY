@@ -1,7 +1,7 @@
 #include "ThreadWorker.h"
 #include "../../common/Timer.h"
 #include "fmath.hpp"
-
+#include <algorithm>
 /*		bool* threads_done;
 		bool master_thread_done;
 		int total_threads;
@@ -34,10 +34,10 @@ ThreadWorker::ThreadWorker(std::vector<TemperaturePressure> grid,std::vector<dou
 	//Initialize our threads
 	//workers = new std::thread[total_threads];
 	//t_intens = new double*[total_threads];
-	threads_done = new bool[total_threads];
+	//threads_done = new bool[total_threads];
 	//master_thread_done=true;
 	for(int i = 0; i < total_threads; i++)
-		threads_done[i] = true;
+		threads_done.push_back(true);
 	//master_thread = new std::thread(&ThreadWorker::DistributeWork,this);
 
 
@@ -185,7 +185,7 @@ void ThreadWorker::ComputeVoigt(int id,int Nener){
 	for(int i = thread_id; i < Nener; i+= working_threads){
 		//int i = 
 		double nu_if = g_nu[i];
-		int ib = std::max(round( ( nu_if-m_lorentz_cutoff-start_nu)/m_dfreq ),0.0);
+		int ib =std:: max(round( ( nu_if-m_lorentz_cutoff-start_nu)/m_dfreq ),0.0);
 		int ie =  std::min(round( ( nu_if+m_lorentz_cutoff-start_nu)/m_dfreq ),(double)m_Npoints);
 		
 		if((ib + ie)==0.0) continue;
@@ -244,6 +244,7 @@ void ThreadWorker::JoinAllThreads(){
 	for(int i = 0; i < workers.size();i++){
 		printf("..%d..",i);
 		fflush(0);
+		while (!threads_done[i]);;
 		workers[i].join();
 	}
 	workers.clear(); // Destroy the threads

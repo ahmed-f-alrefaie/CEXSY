@@ -1,5 +1,5 @@
 #include "Timer.h"
-
+#include <algorithm>
 #pragma once
 /*---------------Public METHODS--------------------------*/  
 
@@ -44,8 +44,8 @@ void Timer::EndTimer(std::string name){
 		float time_taken_seconds =float(GetTimeMs64()- temp.run_time)/1000.0f;
 		temp.started = false;
 		temp.total_time_seconds += time_taken_seconds;
-		temp.max_time_seconds = max(temp.max_time_seconds,time_taken_seconds);
-		temp.min_time_seconds = min(temp.min_time_seconds,time_taken_seconds);
+		temp.max_time_seconds = std::max(temp.max_time_seconds,time_taken_seconds);
+		temp.min_time_seconds = std::min(temp.min_time_seconds,time_taken_seconds);
 		temp.average_call_time =  temp.total_time_seconds/(float)temp.calls;
 		time_data[name] = temp;
 		for (std::map<std::string,TimeInfo>::iterator it=time_data.begin(); it!=time_data.end(); ++it){
