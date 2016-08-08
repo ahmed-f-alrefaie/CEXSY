@@ -22,6 +22,7 @@
 #include <windows.h>
 #endif
 
+using namespace std;
 
 
 
