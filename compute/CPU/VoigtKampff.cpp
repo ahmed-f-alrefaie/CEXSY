@@ -200,13 +200,25 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 
 void VoigtKampff::DoDopplerVectorized(const double * __restrict freq, double * __restrict intens, const double abscoef, const int ib, const int ie, const double gammaD, const double nu)
 {
-	double x0 = SQRTLN2 / (gammaD)*m_res*0.5;
+	double fact = SQRTLN2 / gammaD;
+	double x0 = fact*m_res*0.5;
+	
 	for (int i = ib; i < ie; i++) {
-		//dfreq = freq[i] - nu;
-		//double xp = SQRTLN2 / gammaD_*(dfreq) + x0;
-		//double xm = SQRTLN2 / gammaD_*(dfreq)-x0;
-		//intens[i] += exp(i);
-		intens[i] += (erf(SQRTLN2 / gammaD*(freq[i] - nu) + x0) - erf(SQRTLN2 / gammaD*(freq[i] - nu) - x0))*abscoef*0.5 / (freq[i] - nu);
+	//	double dfreq = freq[i] - nu;
+		//double xp = fact*(dfreq)+x0;
+		//double xm = fact*(dfreq)-x0;
+	//	double de = erf(xp) - erf(xm);
+		intens[i] += abscoef*0.5/m_res*(erf(fact*(freq[i] - nu) + x0)
+			- erf(fact*(freq[i] - nu) - x0));
+			//intens[i] += exp(i);
+			/*intens[i] +=
+				//DE
+				( erf(   fact*(freq[i] - nu) + x0   )
+				- erf(  fact*(freq[i] - nu) - x0  ) )
+
+				*abscoef*0.5 /
+				(freq[i] - nu);
+		}*/
 	}
 }
 

@@ -253,7 +253,7 @@ void BaseProfile::OutputProfile(){
 			for(int l =0; l < Npoints; l++){
 				cross_intens+= intens[l];
 			}
-			cross_intens*=dfreq;
+			cross_intens *= dfreq;
 			printf("Our summed intensity = %16.6E compared to the integrated intensity = %16.6E with a difference of %12.6f % \n",total_intens,cross_intens,(total_intens-cross_intens)*100.0/total_intens);
 		}
 		Timer::getInstance().EndTimer("Compare Intensity");
