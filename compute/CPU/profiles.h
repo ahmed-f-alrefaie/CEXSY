@@ -3,4 +3,4 @@
 #include <ccomplex>
 
 
-extern inline double humlic(double x, double y);
+double humlic(double x, double y);

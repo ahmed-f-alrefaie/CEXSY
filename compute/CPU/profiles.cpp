@@ -7,7 +7,7 @@
 
 typedef std::complex<double> dcomp;
 
-inline double humlic(double x, double y)
+double humlic(double x, double y)
 {
     dcomp T(y,- x);
     double S = fabs(x) + y;
