@@ -1,7 +1,6 @@
 #pragma once
 #include <cstdio>
 #include <string>
-#include <time.h>
 #include <ctime>
 #include <fstream>
 #include <cstdlib>
