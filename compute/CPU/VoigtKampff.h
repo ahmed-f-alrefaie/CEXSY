@@ -23,7 +23,7 @@ public:
 	double ComputeVoigt(double dfreq,int gammaL,double nu);
 	double HumlicekTest(double dfreq,double gammaL,double nu);
 	void ComputeVoigtVectorized(const double* __restrict freq,double* __restrict intens,const double abscoef,const int ib,const int ie,const int gammaL,const double start_nu,const double nu);
-	void ComputeDopplerVectorized(const double* __restrict freq, double* __restrict intens, const double abscoef, const int ib, const int ie, const double gammaD,const double nu);
+	void DoDopplerVectorized(const double* __restrict freq, double* __restrict intens, const double abscoef, const int ib, const int ie, const double gammaD,const double nu);
 
 private:
 	int middle_point;

@@ -124,49 +124,52 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 	double gammaD_ = (m_gammaD*nu);
 
 	
-	
-	//int ib_rel = (freq[ib] - nu)/m_res  + middle_point;
-	//int ie_rel = (freq[ie] - nu)/m_res  + middle_point;
-	
-	//printf("ib: %d ie: %d start:%d end:%d dist: %d center:%d nu: %12.6f\n",ib,ie,ib_rel,ie_rel,dist,center_point,nu);
-	int left_start = ib_rel;
-	int left_end = std::min(middle_point - dist,ie_rel);	
-	int right_start = std::max(middle_point + dist,ib_rel);
-	int right_end = ie_rel;	
-	//If we have a calculation on the left
-	if(ib < center_point){
-		
 
-		DoVectorized(intens + ib-ib_rel,m_voigt_grid[gammaL],abscoef,left_start,left_end);
-		//printf("Left calc %d %d\n",left_start,left_end);
-	
-	
-	}
-	if(ie >= center_point){
-
-		DoVectorized(intens + ib-ib_rel,m_voigt_grid[gammaL],abscoef,right_start,right_end);		
-		//printf("Right calc %d %d\n",right_start,right_end);
-	
-	}
-	
-	//Do the middle
-	int start_dist = std::max(center_point-dist,ib);
-	int end_dist = std::min(center_point+dist,ie);
 	//int start_dist 
 	//printf("Middle calc %d %d\n",start_dist,end_dist);
 	
 	
 	
 	double dfreq;
-	
+	//DO PURE DOPPLER
 	if (gammaL_ == 0.0) {
 		//USe vectorized doppler
-		ComputeDopplerVectorized(freq, intens, abscoef, ib, ie, gammaD_, nu);
+		DoDopplerVectorized(freq, intens, abscoef, ib, ie, gammaD_, nu);
 
 
 
-	}
+	}//OTHERWISE WE VOIGT BABEEEEEEEEEEEEEEE
 	else {
+
+
+		//int ib_rel = (freq[ib] - nu)/m_res  + middle_point;
+		//int ie_rel = (freq[ie] - nu)/m_res  + middle_point;
+
+		//printf("ib: %d ie: %d start:%d end:%d dist: %d center:%d nu: %12.6f\n",ib,ie,ib_rel,ie_rel,dist,center_point,nu);
+		int left_start = ib_rel;
+		int left_end = std::min(middle_point - dist, ie_rel);
+		int right_start = std::max(middle_point + dist, ib_rel);
+		int right_end = ie_rel;
+		//If we have a calculation on the left
+		if (ib < center_point) {
+
+
+			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef, left_start, left_end);
+			//printf("Left calc %d %d\n",left_start,left_end);
+
+
+		}
+		if (ie >= center_point) {
+
+			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef, right_start, right_end);
+			//printf("Right calc %d %d\n",right_start,right_end);
+
+		}
+
+		//Do the middle
+		int start_dist = std::max(center_point - dist, ib);
+		int end_dist = std::min(center_point + dist, ie);
+
 
 		for (int i = start_dist; i < end_dist; i++) {
 			//int index = i + ib - ib_rel;
@@ -195,7 +198,7 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 
 }
 
-void VoigtKampff::ComputeDopplerVectorized(const double * __restrict freq, double * __restrict intens, const double abscoef, const int ib, const int ie, const double gammaD, const double nu)
+void VoigtKampff::DoDopplerVectorized(const double * __restrict freq, double * __restrict intens, const double abscoef, const int ib, const int ie, const double gammaD, const double nu)
 {
 	double x0 = SQRTLN2 / (gammaD)*m_res*0.5;
 	for (int i = ib; i < ie; i++) {
