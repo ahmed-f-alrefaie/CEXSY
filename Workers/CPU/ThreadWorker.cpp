@@ -244,7 +244,7 @@ void ThreadWorker::JoinAllThreads(){
 	for(int i = 0; i < workers.size();i++){
 		printf("..%d..",i);
 		fflush(0);
-		while (!threads_done[i]);;
+		//while (!threads_done[i]);;
 		workers[i].join();
 	}
 	workers.clear(); // Destroy the threads
