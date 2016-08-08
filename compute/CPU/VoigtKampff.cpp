@@ -114,7 +114,7 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 	
 	//int dist = DISTANCE_MAGIC_NUMBER/m_res;//(m_gammaD*nu/m_gammaL[gammaL])/m_res;
 	int dist;
-	if (gammaL == 0.0)
+	if (gammaL_ == 0.0)
 		dist = m_Npoints;
 	else
 		dist = (m_gammaD*nu / m_gammaL[gammaL]) / m_res;
