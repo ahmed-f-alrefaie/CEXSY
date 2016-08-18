@@ -32,6 +32,7 @@ private:
 	double m_res;
 	double m_lorentz_cutoff;
 	double m_gammaD;
+	double m_mag;
 	std::vector< std::vector<double> > m_voigt_grid;
 	std::map<double,int> m_gamma_mapping;
 	std::vector<double> m_gammaL;
