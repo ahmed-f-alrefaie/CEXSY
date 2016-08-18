@@ -45,18 +45,18 @@ VoigtKampff::VoigtKampff(std::vector<double> pGammaL,double pGammaD,double pRes,
 		double gammaL = pGammaL[i];
 		m_voigt_grid.push_back(std::vector<double>());	
 		m_gamma_mapping[gammaL]=i;
-		double m_total = 0.0;
+		m_mag.push_back(0.0);
 		for(int j = 0; j < m_Npoints; j++){	
 			
 			x = SQRTLN2*fabs(nu)/(pGammaD*REFERNECE_NU);
 			y = SQRTLN2*gammaL/(pGammaD*REFERNECE_NU);
 		
 			m_voigt_grid.back().push_back(humlic(x,y)*SQRTLN2*ISQRTPI/(pGammaD*REFERNECE_NU));
-			m_total += m_voigt_grid.back().back();
+			m_mag.back() += m_voigt_grid.back().back();
 			nu+=m_res;
 		}
-		std::cout<<"mag:"<<m_total*m_res<<std::endl;
-		m_mag = m_total;
+		std::cout<<"mag:"<< m_mag.back()*m_res<<std::endl;
+		m_mag.back() *= m_res;
 	}
 
 	std::cout<<"Done!!!"<<std::endl;
@@ -142,6 +142,7 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 	}//OTHERWISE WE VOIGT BABEEEEEEEEEEEEEEE
 	else {
 		int Npoints = ie - ib + 1;
+		double mag = m_mag[gammaL];
 		//double* temp_intens = new double[Npoints];
 		//int ib_rel = (freq[ib] - nu)/m_res  + middle_point;
 		//int ie_rel = (freq[ie] - nu)/m_res  + middle_point;
@@ -155,14 +156,14 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 		if (ib < center_point) {
 
 
-			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef/(m_mag*m_res), left_start, left_end);
+			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef/(mag*m_res), left_start, left_end);
 			//printf("Left calc %d %d\n",left_start,left_end);
 
 
 		}
 		if (ie >= center_point) {
 
-			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef/(m_mag*m_res), right_start, right_end);
+			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef/(mag*m_res), right_start, right_end);
 			//printf("Right calc %d %d\n",right_start,right_end);
 
 		}
@@ -177,7 +178,7 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 			//if(index < ib) continue;
 			//if(index >= ie) continue;
 			dfreq = freq[i] - nu;
-			intens[i] += HumlicekTest(dfreq, gammaL_, nu)*abscoef/(m_mag*m_res);
+			intens[i] += HumlicekTest(dfreq, gammaL_, nu)*abscoef/(mag*m_res);
 		}
 	}
 	
