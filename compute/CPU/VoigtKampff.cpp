@@ -147,6 +147,31 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 		//int ib_rel = (freq[ib] - nu)/m_res  + middle_point;
 		//int ie_rel = (freq[ie] - nu)/m_res  + middle_point;
 
+		//Do the middle
+		int start_dist = std::max(center_point - dist, ib);
+		int end_dist = std::min(center_point + dist, ie);
+		
+		double* temp_humlicek;
+		if (start_dist < end_dist) {
+			temp_humlicek = new double[end_dist - start_dist + 1];
+
+			for (int i = start_dist; i < end_dist; i++) {
+				//int index = i + ib - ib_rel;
+				//if(index < ib) continue;
+				//if(index >= ie) continue;
+				dfreq = freq[i] - nu;
+				double hum = HumlicekTest(dfreq, gammaL_, nu);
+				temp_humlicek[i - start_dist] = hum;
+				mag -= m_voigt_grid[gammaL][i -middle_shift]*m_res;
+				mag += hum*m_res;
+			}
+			for(int i = start_dist; i < end_dist; i++)
+				intens[i] += temp_humlicek[i-start_dist]*abscoef/mag;
+
+			delete[] temp_humlicek;
+
+		}
+
 		//printf("ib: %d ie: %d start:%d end:%d dist: %d center:%d nu: %12.6f\n",ib,ie,ib_rel,ie_rel,dist,center_point,nu);
 		int left_start = ib_rel;
 		int left_end = std::min(middle_point - dist, ie_rel);
@@ -156,30 +181,19 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 		if (ib < center_point) {
 
 
-			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef/(mag*m_res), left_start, left_end);
+			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef/mag, left_start, left_end);
 			//printf("Left calc %d %d\n",left_start,left_end);
 
 
 		}
 		if (ie >= center_point) {
 
-			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef/(mag*m_res), right_start, right_end);
+			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef/mag, right_start, right_end);
 			//printf("Right calc %d %d\n",right_start,right_end);
 
 		}
 
-		//Do the middle
-		int start_dist = std::max(center_point - dist, ib);
-		int end_dist = std::min(center_point + dist, ie);
 
-
-		for (int i = start_dist; i < end_dist; i++) {
-			//int index = i + ib - ib_rel;
-			//if(index < ib) continue;
-			//if(index >= ie) continue;
-			dfreq = freq[i] - nu;
-			intens[i] += HumlicekTest(dfreq, gammaL_, nu)*abscoef/(mag*m_res);
-		}
 	}
 	
 
