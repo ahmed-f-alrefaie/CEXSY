@@ -154,14 +154,14 @@ void VoigtKampff::ComputeVoigtVectorized(const double* __restrict freq,double* _
 		if (ib < center_point) {
 
 
-			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef, left_start, left_end);
+			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef/nu, left_start, left_end);
 			//printf("Left calc %d %d\n",left_start,left_end);
 
 
 		}
 		if (ie >= center_point) {
 
-			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef, right_start, right_end);
+			DoVectorized(intens + ib - ib_rel, m_voigt_grid[gammaL], abscoef/nu, right_start, right_end);
 			//printf("Right calc %d %d\n",right_start,right_end);
 
 		}
